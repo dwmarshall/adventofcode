@@ -3,6 +3,8 @@
 use warnings;
 use strict;
 
+use lib '.';
+use Ranges;
 use List::Util qw/min/;
 
 sub extract_map {
@@ -17,16 +19,6 @@ sub extract_map {
   return \@map;
 }
 
-sub get_from_map {
-  my $mapref = shift;
-  my $value = shift;
-  for my $map (@$mapref) {
-    if ($map->[1] <= $value && $value <= $map->[1] + $map->[2]) {
-      return $map->[0] + $value - $map->[1];
-    }
-  }
-  return $value;
-}
 
 my @lines = <STDIN>;
 
@@ -48,21 +40,21 @@ my @locations;
 
 for my $seed (@seeds) {
   print "Seed $seed, ";
-  my $soil = get_from_map($seed_to_soil, $seed);
-  print "soil $soil, ";
-  my $fertilizer = get_from_map($soil_to_fertilizer, $soil);
-  print "fertilizer $fertilizer, ";
-  my $water = get_from_map($fertilizer_to_water, $fertilizer);
-  print "water $water, ";
-  my $light = get_from_map($water_to_light, $water);
-  print "light $light, ";
-  my $temperature = get_from_map($light_to_temperature, $light);
-  print "temperature $temperature, ";
-  my $humidity = get_from_map($temperature_to_humidity, $temperature);
-  print "humidity $humidity, ";
-  my $location = get_from_map($humidity_to_location, $humidity);
-  print "location $location\n";
+  my $soil = Ranges::map_range([$seed, 1], $seed_to_soil);
+  print "soil $soil->[0], ";
+  my $fertilizer = Ranges::map_range($soil, $soil_to_fertilizer);
+  print "fertilizer $fertilizer->[0], ";
+  my $water = Ranges::map_range($fertilizer, $fertilizer_to_water);
+  print "water $water->[0], ";
+  my $light = Ranges::map_range($water, $water_to_light);
+  print "light $light->[0], ";
+  my $temperature = Ranges::map_range($light, $light_to_temperature);
+  print "temperature $temperature->[0], ";
+  my $humidity =  Ranges::map_range($temperature, $temperature_to_humidity);
+  print "humidity $humidity->[0], ";
+  my $location = Ranges::map_range($humidity, $humidity_to_location);
+  print "location $location->[0]\n";
   push @locations, $location;
 }
 
-print min(@locations), "\n";
+print min(map { $_->[0] } @locations), "\n";
