@@ -15,6 +15,12 @@ sub compare {
     return 0;
   }
 
+  if ($this_a eq 'JJJJJ') {
+    return 1;
+  } elsif ($this_b eq 'JJJJJ') {
+    return -1;
+  }
+
   # How many different labels are there?
   my %a_labels;
   $a_labels{$_}++ for split //, $this_a;

@@ -15,8 +15,8 @@ while (<>) {
 
 my @sorted = sort { Cards2::compare($b, $a) } keys %hands;
 
-local $" = "\n";
-print "@sorted\n";
+# local $" = "\n";
+# print "@sorted\n";
 
 my $total = 0;
 for my $i (0..$#sorted) {
