@@ -1,95 +1,57 @@
 import sys
+from typing import Callable
 
 total_hits = 0
 
 grid = []
 
+tests = []
 
-def down(x: int, y: int) -> bool:
-    return (
-        x + 3 < len(grid)
+
+def test_closure(bounds_check: Callable, dx: int, dy: int) -> Callable:
+    return lambda x, y: (
+        bounds_check(x, y)
         and grid[x][y] == "X"
-        and grid[x + 1][y] == "M"
-        and grid[x + 2][y] == "A"
-        and grid[x + 3][y] == "S"
+        and grid[x + dx][y + dy] == "M"
+        and grid[x + 2 * dx][y + 2 * dy] == "A"
+        and grid[x + 3 * dx][y + 3 * dy] == "S"
     )
 
 
-def up(x: int, y: int) -> bool:
-    return (
-        x >= 3
-        and grid[x][y] == "X"
-        and grid[x - 1][y] == "M"
-        and grid[x - 2][y] == "A"
-        and grid[x - 3][y] == "S"
-    )
+right = test_closure(lambda x, y: y + 3 < len(grid[x]), 0, 1)
+tests.append(right)
 
+left = test_closure(lambda _, y: y >= 3, 0, -1)
+tests.append(left)
 
-def northeast(x: int, y: int) -> bool:
-    return (
-        x >= 3
-        and y + 3 < len(grid[0])
-        and grid[x][y] == "X"
-        and grid[x - 1][y + 1] == "M"
-        and grid[x - 2][y + 2] == "A"
-        and grid[x - 3][y + 3] == "S"
-    )
+down = test_closure(lambda x, _: x + 3 < len(grid), 1, 0)
+tests.append(down)
 
+up = test_closure(lambda x, _: x >= 3, -1, 0)
+tests.append(up)
 
-def northwest(x: int, y: int) -> bool:
-    return (
-        x >= 3
-        and y >= 3
-        and grid[x][y] == "X"
-        and grid[x - 1][y - 1] == "M"
-        and grid[x - 2][y - 2] == "A"
-        and grid[x - 3][y - 3] == "S"
-    )
+northeast = test_closure(lambda x, y: x >= 3 and y + 3 < len(grid[x]), -1, 1)
+tests.append(northeast)
 
+northwest = test_closure(lambda x, y: x >= 3 and y >= 3, -1, -1)
+tests.append(northwest)
 
-def southeast(x: int, y: int) -> bool:
-    return (
-        x + 3 < len(grid)
-        and y >= 3
-        and grid[x][y] == "X"
-        and grid[x + 1][y - 1] == "M"
-        and grid[x + 2][y - 2] == "A"
-        and grid[x + 3][y - 3] == "S"
-    )
+southeast = test_closure(lambda x, y: x + 3 < len(grid) and y >= 3, 1, -1)
+tests.append(southeast)
 
-
-def southwest(x: int, y: int) -> bool:
-    return (
-        x + 3 < len(grid)
-        and y + 3 < len(grid[0])
-        and grid[x][y] == "X"
-        and grid[x + 1][y + 1] == "M"
-        and grid[x + 2][y + 2] == "A"
-        and grid[x + 3][y + 3] == "S"
-    )
-
+southwest = test_closure(lambda x, y: x + 3 < len(grid) and y + 3 < len(grid[x]), 1, 1)
+tests.append(southwest)
 
 with open(sys.argv[1], "r") as file:
     for line in file:
-        total_hits += line.count("XMAS")
-        total_hits += line.count("SAMX")
         grid.append(list(line.strip()))
 
 for i in range(len(grid)):
     for j in range(len(grid[0])):
         if grid[i][j] != "X":
             continue
-        if down(i, j):
-            total_hits += 1
-        if up(i, j):
-            total_hits += 1
-        if northeast(i, j):
-            total_hits += 1
-        if northwest(i, j):
-            total_hits += 1
-        if southeast(i, j):
-            total_hits += 1
-        if southwest(i, j):
-            total_hits += 1
+        for test in tests:
+            if test(i, j):
+                total_hits += 1
 
 print(total_hits)
