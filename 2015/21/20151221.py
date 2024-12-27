@@ -71,8 +71,8 @@ def player_wins(p: Fighter, k: Item, b: Fighter) -> bool:
     p.damage += k.damage
     p.armor += k.armor
     while b.hit_points > 0 and p.hit_points > 0:
-        b.hit_points -= p.damage - b.armor
-        p.hit_points -= b.damage - p.armor
+        b.hit_points -= max(1, p.damage - b.armor)
+        p.hit_points -= max(1, b.damage - p.armor)
     return b.hit_points <= 0
 
 
