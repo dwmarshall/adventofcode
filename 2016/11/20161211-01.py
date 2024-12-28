@@ -1,6 +1,5 @@
 from collections.abc import Iterator
 import copy
-import heapq
 from itertools import combinations, product
 
 # test data
@@ -21,6 +20,14 @@ floors = [
     [set(), set()],
 ]
 
+# part two
+# floors = [
+#     [{"Di", "El", "Pr"}, {"Di", "El", "Pr"}],
+#     [set(), {"Co", "Cu", "Ru", "Pu"}],
+#     [{"Co", "Cu", "Ru", "Pu"}, set()],
+#     [set(), set()],
+# ]
+
 
 def freeze(f: list[list[set]]) -> tuple[tuple[frozenset]]:
     frozen_list = []
@@ -28,14 +35,6 @@ def freeze(f: list[list[set]]) -> tuple[tuple[frozenset]]:
         t = tuple(map(frozenset, floor))
         frozen_list.append(t)
     return tuple(frozen_list)
-
-
-def thaw(f: tuple[tuple[frozenset]]) -> list[list[set]]:
-    thawed_list = []
-    for floor in f:
-        thawed = list(map(set, floor))
-        thawed_list.append(thawed)
-    return thawed_list
 
 
 def choices(f: list[list[set]]) -> Iterator[tuple[set]]:
@@ -57,49 +56,57 @@ def choices(f: list[list[set]]) -> Iterator[tuple[set]]:
         yield ({m}, {g})
 
 
-def invalid(f: list[list[set]]) -> bool:
-    for g in f:
-        M, G = g
-        ignore = M & G
-        microchips = M - ignore
-        generators = G - ignore
-        if microchips and generators:
-            return True
-    return False
+def valid(f: list[list[set]]) -> bool:
+    for floor in f:
+        M, G = floor
+        paired = M & G
+        if (M - paired) and G:
+            return False
+    return True
 
 
 def finished(f: list[list[set]]) -> bool:
     return not any(g[0] or g[1] for g in f[:-1])
 
 
-# initial state, elevator on floor 0
-q = [(0, 0, floors)]
-
+initial_state = (0, floors)
+states = [initial_state]
+step = 0
 seen = set()
+winning_steps = None
 
-while q:
-    steps, elevator, f = heapq.heappop(q)
-    if (elevator, freeze(f)) in seen:
-        continue
-    seen.add((elevator, freeze(f)))
-    print(steps, elevator, f)
-    if invalid(f):
-        continue
-    if finished(f):
-        print(f"Completed after {steps} steps")
-        break
-    for M, G in choices(f[elevator]):
-        if elevator > 0:
-            going_down = copy.deepcopy(f)
-            going_down[elevator][0] -= M
-            going_down[elevator - 1][0] |= M
-            going_down[elevator][1] -= G
-            going_down[elevator - 1][1] |= G
-            heapq.heappush(q, (steps + 1, elevator - 1, going_down))
-        if elevator + 1 < len(f):
-            going_up = copy.deepcopy(f)
-            going_up[elevator][0] -= M
-            going_up[elevator + 1][0] |= M
-            going_up[elevator][1] -= G
-            going_up[elevator + 1][1] |= G
-            heapq.heappush(q, (steps + 1, elevator + 1, going_up))
+while winning_steps is None:
+    step += 1
+    print(f"Starting step {step} with {len(states)} states")
+    new_states = []
+    for s in states:
+        elevator, f = s
+        state_hash = hash((elevator, freeze(f)))
+        if state_hash in seen:
+            continue
+        seen.add(state_hash)
+        if finished(f):
+            winning_steps = step - 1
+            break
+        for M, G in choices(f[elevator]):
+            if elevator > 0:
+                going_down = copy.deepcopy(f)
+                going_down[elevator][0] -= M
+                going_down[elevator - 1][0] |= M
+                going_down[elevator][1] -= G
+                going_down[elevator - 1][1] |= G
+                new_hash = hash((elevator - 1, freeze(going_down)))
+                if valid(going_down) and new_hash not in seen:
+                    new_states.append((elevator - 1, going_down))
+            if elevator + 1 < len(f):
+                going_up = copy.deepcopy(f)
+                going_up[elevator][0] -= M
+                going_up[elevator + 1][0] |= M
+                going_up[elevator][1] -= G
+                going_up[elevator + 1][1] |= G
+                new_hash = hash((elevator + 1, freeze(going_up)))
+                if valid(going_up) and new_hash not in seen:
+                    new_states.append((elevator + 1, going_up))
+    states = new_states
+
+print(f"Completed after {winning_steps} steps")
