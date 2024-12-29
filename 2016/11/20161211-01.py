@@ -1,32 +1,36 @@
 from collections.abc import Iterator
 import copy
 from itertools import combinations, product
+import re
+import sys
 
-# test data
-# each floor is a list The first item is a set of microchips,
-# and the second item is a set of generators.
-floors = [
-    [{"H", "L"}, set()],
-    [set(), {"H"}],
-    [set(), {"L"}],
-    [set(), set()],
-]
-# real data
+element_map = {
+    "cobalt": "Co",
+    "curium": "Cu",
+    "hydrogen": "H",
+    "lithium": "L",
+    "plutonium": "Pu",
+    "promethium": "Pr",
+    "ruthenium": "Ru",
+}
 
-floors = [
-    [{"Pr"}, {"Pr"}],
-    [set(), {"Co", "Cu", "Ru", "Pu"}],
-    [{"Co", "Cu", "Ru", "Pu"}, set()],
-    [set(), set()],
-]
+floors = [lambda: [set(), set()] for _ in range(4)]
+print(floors)
 
-# part two
-# floors = [
-#     [{"Di", "El", "Pr"}, {"Di", "El", "Pr"}],
-#     [set(), {"Co", "Cu", "Ru", "Pu"}],
-#     [{"Co", "Cu", "Ru", "Pu"}, set()],
-#     [set(), set()],
-# ]
+with open(sys.argv[1], "r") as file:
+    for i, line in enumerate(file):
+        new_floor = [set(), set()]
+        for microchip in re.findall(r"(\S+)-compatible microchip", line):
+            new_floor[0].add(element_map[microchip])
+        for generator in re.findall(r"(\S+) generator", line):
+            new_floor[1].add(element_map[generator])
+        floors[i] = new_floor
+
+
+if len(sys.argv) > 2 and sys.argv[2] == "--hard":
+    for i in range(2):
+        for x in ["Di", "El"]:
+            floors[0][i].add(x)
 
 
 def freeze(f: list[list[set]]) -> tuple[tuple[frozenset]]:
@@ -52,7 +56,13 @@ def choices(f: list[list[set]]) -> Iterator[tuple[set]]:
     for g in combinations(G, 2):
         yield (set(), set(g))
     # finally, yield the combinations
+    pair_found = False
     for m, g in product(M, G):
+        if m == g:
+            if pair_found:
+                continue
+            else:
+                pair_found = True
         yield ({m}, {g})
 
 
@@ -69,6 +79,13 @@ def finished(f: list[list[set]]) -> bool:
     return not any(g[0] or g[1] for g in f[:-1])
 
 
+def items_below(f: list[list[set]], e: int) -> bool:
+    for floor in f[0 : e + 1]:
+        if floor[0] or floor[1]:
+            return True
+    return False
+
+
 initial_state = (0, floors)
 states = [initial_state]
 step = 0
@@ -81,15 +98,12 @@ while winning_steps is None:
     new_states = []
     for s in states:
         elevator, f = s
-        state_hash = hash((elevator, freeze(f)))
-        if state_hash in seen:
-            continue
-        seen.add(state_hash)
         if finished(f):
             winning_steps = step - 1
             break
-        for M, G in choices(f[elevator]):
-            if elevator > 0:
+        # going up
+        if elevator > 0 and items_below(f, elevator):
+            for M, G in choices(f[elevator]):
                 going_down = copy.deepcopy(f)
                 going_down[elevator][0] -= M
                 going_down[elevator - 1][0] |= M
@@ -98,7 +112,9 @@ while winning_steps is None:
                 new_hash = hash((elevator - 1, freeze(going_down)))
                 if valid(going_down) and new_hash not in seen:
                     new_states.append((elevator - 1, going_down))
-            if elevator + 1 < len(f):
+                    seen.add(new_hash)
+        if elevator + 1 < len(f):
+            for M, G in choices(f[elevator]):
                 going_up = copy.deepcopy(f)
                 going_up[elevator][0] -= M
                 going_up[elevator + 1][0] |= M
@@ -107,6 +123,7 @@ while winning_steps is None:
                 new_hash = hash((elevator + 1, freeze(going_up)))
                 if valid(going_up) and new_hash not in seen:
                     new_states.append((elevator + 1, going_up))
+                    seen.add(new_hash)
     states = new_states
 
 print(f"Completed after {winning_steps} steps")
