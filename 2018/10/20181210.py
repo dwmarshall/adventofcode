@@ -17,7 +17,7 @@ def analyze(r: list[list[int, int, int, int]]) -> set[int]:
     uf = UnionFind(len(r))
 
     for i, j in combinations(range(len(r)), 2):
-        if manhattan_distance(p[i], p[j]) == 1:
+        if manhattan_distance(p[i], p[j]) <= 2:
             uf.union(i, j)
 
     islands = {uf.find(i) for i in range(len(r))}
@@ -89,10 +89,10 @@ least_islands = float("inf")
 
 for t in count():
     islands = len(analyze(robots))
-    # print(f"{t}: {islands}")
+    print(f"{t}: {islands}")
     if islands < least_islands:
         least_islands = islands
-    if len(analyze(robots)) < 51:
+    if len(analyze(robots)) < 10:
         print("Part 1:")
         display(robots)
         print(f"Part 2: This took {starting_seconds + t} seconds.")
