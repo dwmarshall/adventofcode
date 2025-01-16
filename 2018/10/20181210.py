@@ -85,13 +85,9 @@ y_seconds = (100 + minmax_robots[2][1] - minmax_robots[3][1]) // (
 
 starting_seconds = min(x_seconds, y_seconds)
 advance(robots, starting_seconds)
-least_islands = float("inf")
 
 for t in count():
     islands = len(analyze(robots))
-    print(f"{t}: {islands}")
-    if islands < least_islands:
-        least_islands = islands
     if len(analyze(robots)) < 10:
         print("Part 1:")
         display(robots)
